@@ -1,0 +1,21 @@
+- name: Set hostname
+  hostname:
+    name: "{{ inventory_hostname }}"
+
+- name: Create custom web page
+  copy:
+    content: |
+      <html>
+        <body>
+          <h1>Hello from {{ inventory_hostname }}!</h1>
+          <p>This server was configured by Ansible.</p>
+        </body>
+      </html>
+    dest: /var/www/html/index.nginx-debian.html
+    mode: "0644"
+
+- name: Ensure nginx is running and enabled
+  service:
+    name: nginx
+    state: started
+    enabled: true
