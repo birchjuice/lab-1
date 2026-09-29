@@ -1,4 +1,4 @@
-# Lab 1
+# Lab 1 — Infrastructure as Code
 
 This project demonstrates a simple Infrastructure as Code workflow using **Packer, Terraform, and Ansible** on AWS.
 
@@ -13,6 +13,8 @@ Custom Ubuntu AMI with Nginx
   ▼
 Terraform
   │
+  ├── SSH key pair
+  ├── Security group
   ├── EC2 web-1
   ├── EC2 web-2
   └── EC2 web-3
@@ -34,8 +36,6 @@ Terraform
 * Ubuntu 24.04
 * Nginx
 
-AWS region: `eu-north-1`
-
 ## Project structure
 
 ```text
@@ -55,15 +55,30 @@ lab-1/
                 └── main.yml
 ```
 
-## 1. Build the AMI
+## 1. Configure AWS access
 
-Initialize the Packer plugin:
+Log in to the TalTech AWS account using AWS SSO:
+
+```bash
+export AWS_PROFILE=taltech
+aws sso login --profile taltech
+```
+
+Verify that the credentials work:
+
+```bash
+aws sts get-caller-identity
+```
+
+## 2. Build the AMI
+
+Initialize the Packer plugins:
 
 ```bash
 packer init packer/ubuntu-nginx.pkr.hcl
 ```
 
-Build the custom AMI:
+Build the AMI:
 
 ```bash
 packer build packer/ubuntu-nginx.pkr.hcl
@@ -73,28 +88,20 @@ The resulting AMI contains Ubuntu 24.04 with Nginx installed and enabled.
 
 Copy the resulting AMI ID into `terraform/main.tf`.
 
-## 2. Create the infrastructure
-
-Initialize Terraform:
+## 3. Create the infrastructure
 
 ```bash
 cd terraform
 terraform init
-```
-
-Review the planned changes:
-
-```bash
 terraform plan
-```
-
-Create the three EC2 instances:
-
-```bash
 terraform apply
 ```
 
-Terraform creates three `t3.micro` instances from the custom AMI.
+Terraform creates:
+
+* An SSH key pair
+* A security group allowing SSH and HTTP
+* Three `t3.micro` EC2 instances from the custom AMI
 
 The instances are named:
 
@@ -104,81 +111,78 @@ web-2
 web-3
 ```
 
-After creation, note their public IP addresses.
+Terraform also generates the private SSH key locally:
 
-## 3. Connect to the servers
-
-SSH into a server using the AWS key pair:
-
-```bash
-ssh -i ~/.ssh/alroma-key.pem ubuntu@<server-public-ip>
+```text
+terraform/alroma-key.pem
 ```
 
-The private key must have appropriate permissions:
+Set the correct permissions:
 
 ```bash
-chmod 400 ~/.ssh/alroma-key.pem
+chmod 400 alroma-key.pem
 ```
 
-## 4. Configure the servers with Ansible
+## 4. Connect to the servers
 
-Update `ansible/hosts` with the public IP addresses of the newly created instances.
+SSH into a server using the AWS key pair.
 
-Test the SSH connection:
+From the `terraform` directory:
 
 ```bash
-cd ../ansible
-ansible all -m ping
+ssh -i alroma-key.pem ubuntu@<server-public-ip>
 ```
 
-Run the playbook:
+## 5. Configure the servers with Ansible
+
+Update `ansible/hosts` with the public IPs of the newly created instances.
+
+From the `ansible` directory:
 
 ```bash
 ansible-playbook playbook.yml
 ```
 
-Ansible configures each server by:
+Ansible:
 
-* Setting its hostname
-* Creating a custom Nginx web page
-* Ensuring Nginx is running and enabled
+* Sets the hostname
+* Creates a custom Nginx web page
+* Ensures Nginx is running and enabled
 
-## 5. Test
+## 6. Test
 
-SSH into any of the servers and run:
+SSH into any server and run:
 
 ```bash
 curl localhost
 ```
 
-The server should return its custom web page, for example:
+Example output:
 
 ```text
 Hello from web-1!
 This server was configured by Ansible.
 ```
 
-## 6. Clean up
+## 7. Clean up
 
-When the infrastructure is no longer needed:
+When finished, destroy the infrastructure:
 
 ```bash
-cd terraform
+cd ../terraform
 terraform destroy
 ```
 
-This removes the EC2 instances managed by Terraform.
+This removes the EC2 instances, security group, and AWS key pair managed by Terraform.
 
-The custom AMI remains available and can be used to recreate the infrastructure later.
+The custom AMI remains and can be reused.
 
 ## Workflow summary
 
-The complete workflow is:
-
 ```text
 Packer → build AMI
-Terraform → create EC2 instances
+Terraform → create AWS infrastructure
 Ansible → configure EC2 instances
 ```
 
-The infrastructure can be recreated from the code without manually configuring the servers.
+Infrastructure can be recreated from code without manually configuring AWS resources or servers.

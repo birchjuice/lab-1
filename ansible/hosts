@@ -1,9 +1,9 @@
 [web_servers]
-web-1 ansible_host=16.171.25.182
-web-2 ansible_host=13.60.82.147
-web-3 ansible_host=13.51.207.2
+web-1 ansible_host=51.20.72.65
+web-2 ansible_host=13.62.19.190
+web-3 ansible_host=56.228.81.42
 
 [web_servers:vars]
 ansible_user=ubuntu
-ansible_ssh_private_key_file=~/.ssh/alroma-key.pem
+ansible_ssh_private_key_file=../terraform/alroma-key.pem
 ansible_python_interpreter=/usr/bin/python3
