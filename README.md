@@ -15,9 +15,7 @@ Terraform
   │
   ├── SSH key pair
   ├── Security group
-  ├── EC2 web-1
-  ├── EC2 web-2
-  └── EC2 web-3
+  └── 3 EC2 instances
         │
         ▼
       Ansible
@@ -86,12 +84,11 @@ packer build packer/ubuntu-nginx.pkr.hcl
 
 The resulting AMI contains Ubuntu 24.04 with Nginx installed and enabled.
 
-Copy the resulting AMI ID into `terraform/main.tf`.
-
 ## 3. Create the infrastructure
 
+From the `terraform` directory:
+
 ```bash
-cd terraform
 terraform init
 terraform plan
 terraform apply
@@ -111,11 +108,7 @@ web-2
 web-3
 ```
 
-Terraform also generates the private SSH key locally:
-
-```text
-terraform/alroma-key.pem
-```
+Terraform also generates the private SSH key locally.
 
 Set the correct permissions:
 
@@ -168,21 +161,22 @@ This server was configured by Ansible.
 
 When finished, destroy the infrastructure:
 
+From the `terraform` directory:
+
 ```bash
-cd ../terraform
 terraform destroy
 ```
 
-This removes the EC2 instances, security group, and AWS key pair managed by Terraform.
+This removes the AWS key pair, security group, and EC2 instances.
 
 The custom AMI remains and can be reused.
 
 ## Workflow summary
 
 ```text
-Packer → build AMI
-Terraform → create AWS infrastructure
-Ansible → configure EC2 instances
+Packer    → builds the machine image
+Terraform → creates AWS infrastructure
+Ansible   → provisions the machines
 ```
 
 Infrastructure can be recreated from code without manually configuring AWS resources or servers.
