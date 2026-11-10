@@ -1,4 +1,4 @@
-# Lab 1 — Infrastructure as Code
+# Lab 1 — Image Building & Server Provisioning
 
 This project demonstrates a simple Infrastructure as Code workflow using **Packer, Terraform, and Ansible** on AWS.
 
@@ -18,39 +18,11 @@ Terraform
   └── 3 EC2 instances
         │
         ▼
-      Ansible
+     Ansible
         │
         ├── Set hostnames
         ├── Configure web pages
         └── Ensure Nginx is running
-```
-
-## Tools
-
-* AWS
-* Packer
-* Terraform
-* Ansible
-* Ubuntu 24.04
-* Nginx
-
-## Project structure
-
-```text
-lab-1/
-├── README.md
-├── packer/
-│   └── ubuntu-nginx.pkr.hcl
-├── terraform/
-│   └── main.tf
-└── ansible/
-    ├── ansible.cfg
-    ├── playbook.yml
-    ├── hosts
-    └── roles/
-        └── nginx/
-            └── tasks/
-                └── main.yml
 ```
 
 ## 1. Configure AWS access
@@ -60,12 +32,6 @@ Log in to the TalTech AWS account using AWS SSO:
 ```bash
 export AWS_PROFILE=taltech
 aws sso login --profile taltech
-```
-
-Verify that the credentials work:
-
-```bash
-aws sts get-caller-identity
 ```
 
 ## 2. Build the AMI
@@ -86,9 +52,9 @@ The resulting AMI contains Ubuntu 24.04 with Nginx installed and enabled.
 
 ## 3. Create the infrastructure
 
-From the `terraform` directory:
-
 ```bash
+cd terraform
+
 terraform init
 terraform plan
 terraform apply
@@ -120,8 +86,6 @@ chmod 400 alroma-key.pem
 
 SSH into a server using the AWS key pair.
 
-From the `terraform` directory:
-
 ```bash
 ssh -i alroma-key.pem ubuntu@<server-public-ip>
 ```
@@ -130,9 +94,8 @@ ssh -i alroma-key.pem ubuntu@<server-public-ip>
 
 Update `ansible/hosts` with the public IPs of the newly created instances.
 
-From the `ansible` directory:
-
 ```bash
+cd ../ansible
 ansible-playbook playbook.yml
 ```
 
@@ -144,39 +107,13 @@ Ansible:
 
 ## 6. Test
 
-SSH into any server and run:
-
-```bash
-curl localhost
-```
-
-Example output:
-
-```text
-Hello from web-1!
-This server was configured by Ansible.
-```
+Open `http://PUBLIC_IP` in a browser. The page should display **Hello from web-1!**
 
 ## 7. Clean up
 
 When finished, destroy the infrastructure:
 
-From the `terraform` directory:
-
 ```bash
+cd ../terraform
 terraform destroy
 ```
-
-This removes the AWS key pair, security group, and EC2 instances.
-
-The custom AMI remains and can be reused.
-
-## Workflow summary
-
-```text
-Packer    → builds the machine image
-Terraform → creates AWS infrastructure
-Ansible   → provisions the machines
-```
-
-Infrastructure can be recreated from code without manually configuring AWS resources or servers.
